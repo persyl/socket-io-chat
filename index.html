@@ -1,0 +1,99 @@
+<html>
+<head>
+  <title>Pers chatapplikation</title>
+  <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.6/css/bootstrap.min.css">
+  <script src="/socket.io/socket.io.js"></script>
+  <style>
+  body{
+    margin-top: 30px;
+    background-color:#e0decc;
+  }
+
+  .hidden {
+    display:none;
+  }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div id="userFormArea" class="row">
+      <div class="col-md-12">
+        <form id="userForm">
+          <div class="form-group">
+            <label>Ditt chatalias:</label>
+            <input class="form-control" id="username"/>
+            <br />
+            <input type="submit" class="btn btn-primary" value="Logga in"/>
+          </div>
+        </form>
+      </div>
+    </div>
+
+
+    <div id="messageArea" class="row hidden">
+      <div class="col-md-4">
+        <div class="well">
+          <h3>Aktiva i chatten</h3>
+          <ul class="list-group" id="users"></ul>
+        </div>
+      </div>
+      <div class="col-md-8">
+        <div class="chat" id="chat"></div>
+
+        <form id="messageForm">
+          <div class="form-group">
+            <label>Meddelande:</label>
+            <textarea class="form-control" id="message"></textarea>
+            <br />
+            <input type="submit" class="btn btn-primary" value="Skicka"/>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    (function(){
+      var socket = io.connect();
+      var messageForm = document.getElementById('messageForm');
+      var message = document.getElementById('message');
+      var chat = document.getElementById('chat');
+      var messageArea = document.getElementById('messageArea');
+      var userFormArea = document.getElementById('userFormArea');
+      var userForm = document.getElementById('userForm');
+      var users = document.getElementById('users');
+      var username = document.getElementById('username');
+
+      messageForm.onsubmit = function(e){
+        e.preventDefault();
+        socket.emit('send message', message.value);
+        message.value = '';
+      };
+
+      socket.on('new message', function(data){
+        chat.innerHTML += '<div class="well"><strong>' + data.user + '</strong>: ' + data.msg + '</div>';
+      });
+
+      userForm.onsubmit = function(e){
+        e.preventDefault();
+        socket.emit('new user', username.value, function(data){
+          if(data){
+            userFormArea.classList.add('hidden');
+            messageArea.classList.remove('hidden');
+          }
+        });
+        username.innerHTML = '';
+      };
+
+      socket.on('get users', function(data){
+        var html = '';
+        for(var i = 0;i < data.length;i++){
+          html += '<li class="list-group-item">' + data[i] + '</li>';
+        }
+        users.innerHTML = html;
+      });
+
+    })();
+  </script>
+</body>
+</html>
